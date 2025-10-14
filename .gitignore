@@ -1,2 +1,106 @@
 .env
 .env.local
+
+# -------------------------------------------------------------------
+# .gitignore — CMake / C++ / Vulkan / Android cross-dev container
+# -------------------------------------------------------------------
+
+# Build directories
+/build/
+/build-*/
+/out/
+/bin/
+/lib/
+
+# Generated files
+CMakeCache.txt
+CMakeFiles/
+Makefile
+cmake_install.cmake
+install_manifest.txt
+compile_commands.json
+CTestTestfile.cmake
+
+# IDE / Editor metadata
+.vscode/
+.idea/
+*.user
+*.suo
+*.vcxproj*
+*.ncb
+*.opensdf
+*.sdf
+*.cache
+*.project
+*.cproject
+
+# Object & binary files
+*.o
+*.obj
+*.a
+*.lib
+*.so
+*.dll
+*.dylib
+*.exe
+*.out
+*.app
+
+# Logs & temporary files
+*.log
+*.tmp
+*.bak
+*.swp
+*.swo
+*.old
+*.orig
+*.rej
+*~
+
+# Coverage / Sanitizer
+*.gcno
+*.gcda
+*.gcov
+*.profraw
+*.profdata
+*.lsan
+*.asan
+*.tsan
+
+# CCache
+/ccache/
+.cache/
+ccache.tar.gz
+
+# Test artifacts
+Testing/
+test-results/
+.vscode-test/
+
+# Android SDK/NDK (if local copies)
+.android/
+.gradle/
+local.properties
+*.keystore
+
+# Generated assets or shaders
+*.spv
+*.hlsl
+*.metal
+*.glsl
+*.shadercache
+
+# System-specific junk
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Docker / Dev containers
+docker-compose.override.yml
+.env.local
+*.pid
+*.sock
+
+# Optional: ignore Vulkan SDK archives if downloaded manually
+vulkan-sdk-*.tar.*
+VulkanSDK/

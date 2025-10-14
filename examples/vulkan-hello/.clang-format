@@ -1,0 +1,80 @@
+# .clang-format — Google style baseline + C++20 tweaks
+
+BasedOnStyle: Google
+Language: Cpp
+Standard: c++20
+
+# --- Layout ---
+ColumnLimit: 100
+IndentWidth: 2
+TabWidth: 2
+UseTab: Never
+ContinuationIndentWidth: 4
+
+# --- Pointers & References ---
+DerivePointerAlignment: false
+PointerAlignment: Left
+ReferenceAlignment: Left
+
+# --- Braces / Short blocks ---
+BreakBeforeBraces: Attach
+AllowShortFunctionsOnASingleLine: Empty
+AllowShortIfStatementsOnASingleLine: false
+AllowShortLoopsOnASingleLine: false
+
+# --- Namespaces / Access / Case labels ---
+NamespaceIndentation: None
+IndentAccessModifiers: false
+IndentCaseLabels: true
+
+# --- Includes ---
+IncludeBlocks: Regroup
+SortIncludes: true
+# Optional: nudge Vulkan headers into their own bucket if you like
+IncludeCategories:
+  - Regex: '^<vulkan/.*>'
+    Priority: 2
+    SortPriority: 2
+  - Regex: '^<.*>'
+    Priority: 3
+    SortPriority: 3
+  - Regex: '.*'
+    Priority: 4
+    SortPriority: 4
+
+# --- Spaces ---
+SpaceAfterCStyleCast: false
+SpaceBeforeRangeBasedForLoopColon: true
+SpacesInParentheses: false
+SpaceBeforeParens: ControlStatements
+SpacesInAngles: false
+
+# --- Alignments (keep modest to avoid churn) ---
+AlignConsecutiveAssignments: Consecutive
+AlignConsecutiveDeclarations: None
+AlignTrailingComments: true
+AlignAfterOpenBracket: Align
+
+# --- Lambdas / Templates / Requires ---
+AllowShortLambdasOnASingleLine: Empty
+BinPackParameters: true
+BinPackArguments: true
+Cpp11BracedListStyle: true
+RequiresClausePosition: WithPreceding
+
+# --- Preprocessor ---
+SpaceBeforeParensOptions:
+  AfterControlStatements: true
+  AfterFunctionDefinitionName: false
+  AfterFunctionDeclarationName: false
+  AfterOverloadedOperator: false
+MacroBlockBegin: '^\\s*#\\s*if'
+MacroBlockEnd: '^\\s*#\\s*endif'
+
+# --- Comments ---
+ReflowComments: true
+CommentPragmas: '^ NOLINT|^ NOLINTNEXTLINE'
+
+# --- Misc ---
+KeepEmptyLinesAtTheStartOfBlocks: false
+SortUsingDeclarations: true
