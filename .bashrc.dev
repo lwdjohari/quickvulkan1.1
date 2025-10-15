@@ -88,7 +88,10 @@ _ver_present() {
   fi
 }
 
-
+# line width + padding helper
+  _w=100
+  _pad() { local s="$1" fill; local len=${#s}; if [ "$len" -lt "$_w" ]; then fill=$(printf '%*s' "$(( _w - len ))" ''); printf "%s%s" "$s" "$fill"; else printf "%s" "$s"; fi; }
+  
 # Banner -------------------------------------------------------------
 devinfo() {
   local now="$(date '+%Y-%m-%d %H:%M:%S')"

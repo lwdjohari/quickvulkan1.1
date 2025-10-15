@@ -23,9 +23,6 @@ if [ -t 1 ]; then
   _ws="/workspace"
   _home="$HOME"
 
-  # line width + padding helper
-  _w=100
-  _pad() { local s="$1" fill; local len=${#s}; if [ "$len" -lt "$_w" ]; then fill=$(printf '%*s' "$(( _w - len ))" ''); printf "%s%s" "$s" "$fill"; else printf "%s" "$s"; fi; }
 
   # Full inventory
   devinfo
