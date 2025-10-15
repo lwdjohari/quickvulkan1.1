@@ -45,6 +45,41 @@ _ver() {
   fi
 }
 
+# --- SAFE version printers (avoid hangs) -------------------------------------
+# Try a few common flags with a short timeout; print first line if any.
+_ver_try() {
+  # usage: _ver_try <cmd> [flag]
+  local cmd="$1" flag="${2:-}"
+  # shellcheck disable=SC2086
+  timeout 1s bash -lc "$cmd ${flag} 2>&1 | head -n1"
+}
+
+_ver_safe() {
+  # usage: _ver_safe <cmd> [known-flag]
+  local cmd="$1" known="$2" out=""
+  if ! command -v "$cmd" >/dev/null 2>&1; then
+    printf "%-12s %s\n" "${YELLOW}${cmd}:${RESET}" "${RED}MISSING${RESET}"
+    return
+  fi
+
+  # explicit known flag first (e.g., ssh -V, nc -h)
+  if [ -n "$known" ]; then
+    out="$(_ver_try "$cmd" "$known")"
+  fi
+  # generic fallbacks
+  if [ -z "$out" ]; then out="$(_ver_try "$cmd" "--version")"; fi
+  if [ -z "$out" ]; then out="$(_ver_try "$cmd" "-V")"; fi
+  if [ -z "$out" ]; then out="$(_ver_try "$cmd" "-v")"; fi
+  if [ -z "$out" ]; then out="$(_ver_try "$cmd" "-h")"; fi
+
+  if [ -n "$out" ]; then
+    printf "%-12s %s\n" "${YELLOW}${cmd}:${RESET}" "$out"
+  else
+    # as a last resort, just say it's present to avoid blocking
+    printf "%-12s %s\n" "${YELLOW}${cmd}:${RESET}" "available"
+  fi
+}
+
 _ver_present() {
   if command -v "$1" >/dev/null 2>&1; then
     printf "%-12s %s\n" "${YELLOW}$1:${RESET}" "available"
@@ -52,6 +87,7 @@ _ver_present() {
     printf "%-12s %s\n" "${YELLOW}$1:${RESET}" "${RED}MISSING${RESET}"
   fi
 }
+
 
 # Banner -------------------------------------------------------------
 devinfo() {
@@ -137,25 +173,25 @@ devinfo() {
   _ver_present ndk-build
   echo ""
 
-  echo -e "${BOLD}DB / Networking / Compression:${RESET}"
-  _ver psql
-  _ver sqlite3
-  _ver openssl
-  _ver curl
-  _ver wget
-  _ver rsync
-  _ver ssh
-  _ver netcat
-  _ver traceroute
-  _ver gzip
+  eecho -e "${BOLD}DB / Networking / Compression:${RESET}"
+  _ver_safe psql
+  _ver_safe sqlite3
+  _ver_safe openssl
+  _ver_safe curl
+  _ver_safe wget
+  _ver_safe rsync
+  _ver_safe ssh "-V"         # OpenSSH prints version only with -V (stderr); safe
+  _ver_safe netcat "-h"      # many nc/netcat have no --version, -h is safe
+  _ver_safe traceroute "--version"
+  _ver_safe gzip "--version"
   echo ""
 
   echo -e "${BOLD}Misc Utilities:${RESET}"
-  _ver htop
-  _ver tree
-  _ver tar
-  _ver bzip2
-  _ver brotli
+  _ver_safe htop "--version"
+  _ver_safe tree "--version"
+  _ver_safe tar "--version"
+  _ver_safe bzip2 "--version"
+  _ver_safe brotli "--version"
   echo ""
 }
 
