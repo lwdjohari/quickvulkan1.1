@@ -12,7 +12,7 @@ ENV DEBIAN_FRONTEND=noninteractive TZ=UTC
 
 # Base prerequisites + apt hygiene
 RUN apt-get update && apt-get install -y --no-install-recommends \
-      ca-certificates apt-transport-https gnupg curl wget unzip zip rsync \
+      sudo bash ca-certificates apt-transport-https gnupg curl wget unzip zip rsync \
       software-properties-common \
     && rm -rf /var/lib/apt/lists/*
 
@@ -30,7 +30,7 @@ RUN set -eux; \
 # -------------------------------------------------------------------
 RUN apt-get update && apt-get install -y --no-install-recommends \
       # compilers / build
-      clang lld lldb gdb \
+      build-essential gcc g++ llvm clang lld lldb gdb \
       cmake ninja-build pkg-config make \
       # VCS / scripting
       git git-lfs gnupg python3 python3-pip \
@@ -137,6 +137,7 @@ RUN set -eux; \
     rm -f ndk.zip; \
     ln -s /opt/android-ndk-${ANDROID_NDK_VERSION} /opt/android-ndk
 
+    
 # -------------------------------------------------------------------
 # OpenSSH server (behavior per your template via entrypoint env)
 # -------------------------------------------------------------------
@@ -172,6 +173,22 @@ COPY .bashrc.dev /etc/skel/.bashrc
 COPY .bash_profile.dev /etc/skel/.bash_profile
 COPY .bashrc.dev /root/.bashrc
 COPY .bash_profile.dev /root/.bash_profile
+
+# --- Android SDK/NDK profile ---
+RUN printf '%s\n' \
+'export ANDROID_SDK_ROOT=${ANDROID_SDK_ROOT:-/opt/android-sdk}' \
+'export ANDROID_NDK_ROOT=${ANDROID_NDK_ROOT:-$ANDROID_SDK_ROOT/ndk}' \
+'export PATH="$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/platform-tools:$PATH"' \
+'if [ -n "${ANDROID_BUILD_TOOLS:-}" ] && [ -d "$ANDROID_SDK_ROOT/build-tools/$ANDROID_BUILD_TOOLS" ]; then' \
+'  export PATH="$ANDROID_SDK_ROOT/build-tools/$ANDROID_BUILD_TOOLS:$PATH"' \
+'fi' \
+> /etc/profile.d/20-android-sdk.sh && chmod 0644 /etc/profile.d/20-android-sdk.sh
+
+# --- ccache profile (so CCACHE_DIR shows up for all shells) ---
+RUN printf '%s\n' \
+'export CCACHE_DIR=${CCACHE_DIR:-/opt/cache/ccache}' \
+'export PATH="/usr/lib/ccache:$PATH"' \
+> /etc/profile.d/30-ccache.sh && chmod 0644 /etc/profile.d/30-ccache.sh
 
 WORKDIR /workspace
 VOLUME ["/workspace", "/root/.ssh", "/opt/cache/ccache"]
