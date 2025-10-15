@@ -106,7 +106,7 @@ devinfo() {
 
   echo -e " ${YELLOW}VULKAN_SDK:${RESET} ${VULKAN_SDK:-<unset>}"
   echo -e " ${YELLOW}ANDROID_SDK_ROOT:${RESET} ${ANDROID_SDK_ROOT:-<unset>}"
-  echo -e " ${YELLOW}ANDROID_NDK_ROOT:${RESET} ${ANDROID_NDK_HOME:-<unset>}"
+  echo -e " ${YELLOW}ANDROID_NDK_HOME:${RESET} ${ANDROID_NDK_HOME:-<unset>}"
   echo -e " ${YELLOW}DISPLAY:${RESET} ${DISPLAY:-<unset>}   ${YELLOW}WAYLAND_DISPLAY:${RESET} ${WAYLAND_DISPLAY:-<unset>}\n"
 
   echo -e "${CYAN}${BOLD}======================== DEV CONTAINER INVENTORY ========================${RESET}"
@@ -114,7 +114,7 @@ devinfo() {
   echo -e "${BOLD}Environment & Paths:${RESET}"
   printf "  %-14s %s\n" "VULKAN_SDK:" "${VULKAN_SDK:-<unset>}"
   printf "  %-14s %s\n" "ANDROID_SDK_ROOT:" "${ANDROID_SDK_ROOT:-<unset>}"
-  printf "  %-14s %s\n" "ANDROID_NDK_ROOT:" "${ANDROID_NDK_ROOT:-<unset>}"
+  printf "  %-14s %s\n" "ANDROID_NDK_HOME:" "${ANDROID_NDK_HOME:-<unset>}"
   printf "  %-14s %s\n" "CCACHE_DIR:" "${CCACHE_DIR:-<unset>}"
   printf "  %-14s %s\n" "DISPLAY:" "${DISPLAY:-<unset>}"
   printf "  %-14s %s\n" "WAYLAND_DISPLAY:" "${WAYLAND_DISPLAY:-<unset>}"
