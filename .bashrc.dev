@@ -91,7 +91,7 @@ _ver_present() {
 # line width + padding helper
   _w=100
   _pad() { local s="$1" fill; local len=${#s}; if [ "$len" -lt "$_w" ]; then fill=$(printf '%*s' "$(( _w - len ))" ''); printf "%s%s" "$s" "$fill"; else printf "%s" "$s"; fi; }
-  
+
 # Banner -------------------------------------------------------------
 devinfo() {
   local now="$(date '+%Y-%m-%d %H:%M:%S')"
@@ -111,9 +111,7 @@ devinfo() {
   echo -e " ${YELLOW}ANDROID_SDK_ROOT:${RESET} ${ANDROID_SDK_ROOT:-<unset>}"
   echo -e " ${YELLOW}ANDROID_NDK_HOME:${RESET} ${ANDROID_NDK_HOME:-<unset>}"
   echo -e " ${YELLOW}DISPLAY:${RESET} ${DISPLAY:-<unset>}   ${YELLOW}WAYLAND_DISPLAY:${RESET} ${WAYLAND_DISPLAY:-<unset>}\n"
-
-  echo -e "\n${CYAN}----------------------------------------------------------------------------------------------------${RESET}"
-
+  echo -e "${CYAN}----------------------------------------------------------------------------------------------------${RESET}"
   echo -e "${BOLD}Environment & Paths:${RESET}"
   printf "  %-14s %s\n" "VULKAN_SDK:" "${VULKAN_SDK:-<unset>}"
   printf "  %-14s %s\n" "ANDROID_SDK_ROOT:" "${ANDROID_SDK_ROOT:-<unset>}"
