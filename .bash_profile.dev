@@ -27,19 +27,6 @@ if [ -t 1 ]; then
   _w=100
   _pad() { local s="$1" fill; local len=${#s}; if [ "$len" -lt "$_w" ]; then fill=$(printf '%*s' "$(( _w - len ))" ''); printf "%s%s" "$s" "$fill"; else printf "%s" "$s"; fi; }
 
-  echo -e "\n${CYAN}----------------------------------------------------------------------------------------------------${RESET}"
-  echo -e "$(_pad " ${BOLD}Vulkan/GLES C++ Dev Container — LunarG SDK default (target runtime: Vulkan 1.1)${RESET}  ${DIM}${_now}${RESET}")"
-  echo -e "${CYAN}----------------------------------------------------------------------------------------------------${RESET}"
-  echo -e "$(_pad " ${YELLOW}User${RESET}: ${BOLD}${_user}${RESET} (uid=${_uid} gid=${_gid})   ${YELLOW}Host${RESET}: ${BOLD}${_host}${RESET}   ${YELLOW}Shell${RESET}: ${_sh}")"
-  echo -e "$(_pad " ${YELLOW}Workspace${RESET}: ${_ws}   ${YELLOW}Home${RESET}: ${_home}")"
-  echo
-
-  # Quick env summary
-  echo -e " ${YELLOW}VULKAN_SDK:${RESET} ${BOLD}${VULKAN_SDK:-<unset>}${RESET}"
-  echo -e " ${YELLOW}ANDROID_SDK_ROOT:${RESET} ${BOLD}${ANDROID_SDK_ROOT:-<unset>}${RESET}   ${YELLOW}ANDROID_NDK_ROOT:${RESET} ${BOLD}${ANDROID_NDK_ROOT:-<unset>}${RESET}"
-  echo -e " ${YELLOW}DISPLAY:${RESET} ${BOLD}${DISPLAY:-<unset>}${RESET}   ${YELLOW}WAYLAND_DISPLAY:${RESET} ${BOLD}${WAYLAND_DISPLAY:-<unset>}${RESET}"
-  echo
-
   # Full inventory
   devinfo
 fi

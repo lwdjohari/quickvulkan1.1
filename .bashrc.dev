@@ -109,7 +109,7 @@ devinfo() {
   echo -e " ${YELLOW}ANDROID_NDK_HOME:${RESET} ${ANDROID_NDK_HOME:-<unset>}"
   echo -e " ${YELLOW}DISPLAY:${RESET} ${DISPLAY:-<unset>}   ${YELLOW}WAYLAND_DISPLAY:${RESET} ${WAYLAND_DISPLAY:-<unset>}\n"
 
-  echo -e "${CYAN}${BOLD}======================== DEV CONTAINER INVENTORY ========================${RESET}"
+  echo -e "\n${CYAN}----------------------------------------------------------------------------------------------------${RESET}"
 
   echo -e "${BOLD}Environment & Paths:${RESET}"
   printf "  %-14s %s\n" "VULKAN_SDK:" "${VULKAN_SDK:-<unset>}"
