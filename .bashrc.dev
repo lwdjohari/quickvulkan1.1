@@ -106,7 +106,7 @@ devinfo() {
 
   echo -e " ${YELLOW}VULKAN_SDK:${RESET} ${VULKAN_SDK:-<unset>}"
   echo -e " ${YELLOW}ANDROID_SDK_ROOT:${RESET} ${ANDROID_SDK_ROOT:-<unset>}"
-  echo -e " ${YELLOW}ANDROID_NDK_ROOT:${RESET} ${ANDROID_NDK_ROOT:-<unset>}"
+  echo -e " ${YELLOW}ANDROID_NDK_ROOT:${RESET} ${ANDROID_NDK_HOME:-<unset>}"
   echo -e " ${YELLOW}DISPLAY:${RESET} ${DISPLAY:-<unset>}   ${YELLOW}WAYLAND_DISPLAY:${RESET} ${WAYLAND_DISPLAY:-<unset>}\n"
 
   echo -e "${CYAN}${BOLD}======================== DEV CONTAINER INVENTORY ========================${RESET}"
@@ -183,16 +183,16 @@ devinfo() {
   _ver_safe ssh "-V"         # OpenSSH prints version only with -V (stderr); safe
   _ver_safe netcat "-h"      # many nc/netcat have no --version, -h is safe
   _ver_safe traceroute "--version"
-  _ver_safe gzip "--version"
-  echo ""
-
-  echo -e "${BOLD}Misc Utilities:${RESET}"
-  _ver_safe htop "--version"
-  _ver_safe tree "--version"
   _ver_safe tar "--version"
   _ver_safe bzip2 "--version"
   _ver_safe brotli "--version"
+  _ver_safe gzip "--version"
   echo ""
+
+  #echo -e "${BOLD}Misc Utilities:${RESET}"
+  #_ver_safe htop "--version"
+  #_ver_safe tree "--version"
+  #echo ""
 }
 
 # Automatically show banner on first interactive shell
