@@ -49,10 +49,19 @@ services:
       - "${HOME_PATH:-/mnt/data/dev-volumes/quickvulkanv1/home}:/home:rw"
       - "${CCACHE_PATH:-/mnt/data/dev-volumes/quickvulkanv1/ccache}:/opt/cache/ccache"
 
-    # GPU passthrough (uncomment one)
+    # Choose ONE of the following runtime configs:
+    # For NVIDIA host GPUs (requires nvidia-container-toolkit):
     # gpus: all
+    # environment:
+    #   NVIDIA_VISIBLE_DEVICES: all
+    #   NVIDIA_DRIVER_CAPABILITIES: all
+
+    # For Intel/AMD hosts (Mesa):
     # devices:
     #   - /dev/dri:/dev/dri
+    # volumes:
+    #   - /usr/share/vulkan/icd.d:/usr/share/vulkan/icd.d:ro
+
 
     cap_add:
       - SYS_PTRACE

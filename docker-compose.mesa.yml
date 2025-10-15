@@ -1,0 +1,6 @@
+services:
+  quickvulkanv1:
+    devices:
+      - /dev/dri:/dev/dri
+    volumes:
+      - /usr/share/vulkan/icd.d:/usr/share/vulkan/icd.d:ro
