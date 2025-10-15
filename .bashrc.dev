@@ -173,7 +173,7 @@ devinfo() {
   _ver_present ndk-build
   echo ""
 
-  eecho -e "${BOLD}DB / Networking / Compression:${RESET}"
+  echo -e "${BOLD}DB / Networking / Compression:${RESET}"
   _ver_safe psql
   _ver_safe sqlite3
   _ver_safe openssl
