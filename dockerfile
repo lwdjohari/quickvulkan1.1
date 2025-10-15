@@ -55,13 +55,13 @@ ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
 ENV PATH="$JAVA_HOME/bin:$PATH"
 
 # -------------------------------------------------------------------
-# GLES/EGL + X/Wayland dev libs (vendor-neutral)
+# GLES/EGL + X/Wayland dev libs (vendor-neutral) — Ubuntu 24.04 names
 # -------------------------------------------------------------------
 RUN apt-get update && apt-get install -y --no-install-recommends \
-      libgles2-mesa libgles2-mesa-dev \
-      libegl1 libegl1-mesa libegl1-mesa-dev \
+      libgles2 libgles2-mesa-dev \
+      libegl1 libegl1-mesa-dev \
       libgbm1 libgbm-dev \
-      mesa-utils mesa-utils-extra \
+      mesa-utils \
       libx11-dev libxrandr-dev libxi-dev libxinerama-dev libxcursor-dev \
       libwayland-client0 libwayland-dev \
     && rm -rf /var/lib/apt/lists/*
