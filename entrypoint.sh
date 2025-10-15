@@ -3,9 +3,9 @@ set -eo pipefail
 
 # ---------------------------------------------------------------
 # entrypoint.sh — quickvulkanv1 dev container
-#  - Preserves your original template behavior
-#  - Adds robust UID/GID=1000 handling on Ubuntu (adopt/rename)
-#  - Fixes sudoers.d missing + home-dir warnings
+#  - Robust UID/GID=1000 handling on Ubuntu (adopt/rename)
+#  - Ensures /etc/sudoers.d exists
+#  - Seeds /home with .bashrc/.bash_profile from /etc/skel when bind-mounted
 # ---------------------------------------------------------------
 
 # Load system profile for non-login shells too
@@ -205,6 +205,17 @@ if bool "${CREATE_USER}"; then
     install -d -m 0755 -o "${USER_UID}" -g "${USER_GID}" "/home/${USER_NAME}"
   fi
   chown -R "${USER_UID}:${USER_GID}" "/home/${USER_NAME}" || true
+
+  # Seed shell profiles from /etc/skel if missing (bind-mounted /home is empty)
+  if [ -d "/home/${USER_NAME}" ]; then
+    if [ -f /etc/skel/.bashrc ] && [ ! -f "/home/${USER_NAME}/.bashrc" ]; then
+      cp /etc/skel/.bashrc "/home/${USER_NAME}/.bashrc"
+    fi
+    if [ -f /etc/skel/.bash_profile ] && [ ! -f "/home/${USER_NAME}/.bash_profile" ]; then
+      cp /etc/skel/.bash_profile "/home/${USER_NAME}/.bash_profile"
+    fi
+    chown "${USER_UID}:${USER_GID}" "/home/${USER_NAME}/.bashrc" "/home/${USER_NAME}/.bash_profile" 2>/dev/null || true
+  fi
 
   # Workspace ownership
   if bool "${TAKE_WORKSPACE}"; then
