@@ -174,15 +174,76 @@ COPY .bash_profile.dev /etc/skel/.bash_profile
 COPY .bashrc.dev /root/.bashrc
 COPY .bash_profile.dev /root/.bash_profile
 
-# --- Android SDK/NDK profile ---
-RUN printf '%s\n' \
-'export ANDROID_SDK_ROOT=${ANDROID_SDK_ROOT:-/opt/android-sdk}' \
-'export ANDROID_NDK_ROOT=${ANDROID_NDK_ROOT:-$ANDROID_SDK_ROOT/ndk}' \
-'export PATH="$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/platform-tools:$PATH"' \
-'if [ -n "${ANDROID_BUILD_TOOLS:-}" ] && [ -d "$ANDROID_SDK_ROOT/build-tools/$ANDROID_BUILD_TOOLS" ]; then' \
-'  export PATH="$ANDROID_SDK_ROOT/build-tools/$ANDROID_BUILD_TOOLS:$PATH"' \
-'fi' \
-> /etc/profile.d/20-android-sdk.sh && chmod 0644 /etc/profile.d/20-android-sdk.sh
+# --- Android environment loader (SDK flat + NDK flat, dynamic build-tools) ---
+RUN mkdir -p /etc/profile.d && \
+  cat >/etc/profile.d/20-android-sdk.sh <<'EOF' && \
+  chmod 0644 /etc/profile.d/20-android-sdk.sh
+
+# 20-android-sdk.sh — unified Android env loader (SDK + flat NDK)
+# Honors overrides from the environment/compose; otherwise uses sensible defaults.
+
+# Roots (can be overridden via env)
+export ANDROID_SDK_ROOT="${ANDROID_SDK_ROOT:-/opt/android-sdk}"
+export ANDROID_HOME="${ANDROID_HOME:-$ANDROID_SDK_ROOT}"
+export ANDROID_NDK_HOME="${ANDROID_NDK_HOME:-/opt/android-ndk}"   # flat NDK (ndk-build at root)
+
+# Helper: prepend to PATH if the directory exists and isn't already present
+_path_add() {
+  [ -d "$1" ] || return 0
+  case ":$PATH:" in *":$1:"*) ;; *) PATH="$1:$PATH";; esac
+}
+
+# --- JAVA_HOME (best effort; JDK 17 on Ubuntu) ---
+if [ -z "${JAVA_HOME:-}" ]; then
+  if [ -d /usr/lib/jvm/java-17-openjdk-amd64 ]; then
+    export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+  elif command -v update-alternatives >/dev/null 2>&1; then
+    jhome="$(update-alternatives --list java 2>/dev/null | sed 's:/bin/java::' | head -n1)"
+    [ -n "$jhome" ] && export JAVA_HOME="$jhome"
+  fi
+fi
+
+# --- cmdline-tools (prefer 'latest', else highest numeric) ---
+if [ -d "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin" ]; then
+  _path_add "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin"
+else
+  _ct="$(ls -1 "$ANDROID_SDK_ROOT/cmdline-tools" 2>/dev/null | grep -v '^latest$' | sort -V | tail -n1)"
+  [ -n "$_ct" ] && _path_add "$ANDROID_SDK_ROOT/cmdline-tools/$_ct/bin"
+fi
+
+# --- platform-tools (adb/fastboot) ---
+_path_add "$ANDROID_SDK_ROOT/platform-tools"
+
+# --- build-tools (aapt/aapt2/zipalign/apksigner) ---
+if [ -d "$ANDROID_SDK_ROOT/build-tools" ]; then
+  if [ -n "${ANDROID_BUILD_TOOLS:-}" ] && [ -d "$ANDROID_SDK_ROOT/build-tools/$ANDROID_BUILD_TOOLS" ]; then
+    _bt="$ANDROID_BUILD_TOOLS"
+  else
+    _bt="$(ls -1 "$ANDROID_SDK_ROOT/build-tools" 2>/dev/null | sort -V | tail -n1)"
+  fi
+  if [ -n "$_bt" ] && [ -d "$ANDROID_SDK_ROOT/build-tools/$_bt" ]; then
+    export ANDROID_BUILD_TOOLS="$_bt"
+    export ANDROID_BUILD_TOOLS_BIN="$ANDROID_SDK_ROOT/build-tools/$_bt"
+    _path_add "$ANDROID_BUILD_TOOLS_BIN"
+  fi
+fi
+
+# --- emulator tools ---
+_path_add "$ANDROID_SDK_ROOT/emulator"
+
+# --- NDK (flat layout) ---
+# Add root (for ndk-build) and LLVM toolchains bin if present
+if [ -d "$ANDROID_NDK_HOME" ]; then
+  _path_add "$ANDROID_NDK_HOME"
+  # Typical LLVM toolchains path on Linux:
+  if [ -d "$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin" ]; then
+    _path_add "$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin"
+  fi
+fi
+
+export PATH
+EOF
+
 
 # --- ccache profile (so CCACHE_DIR shows up for all shells) ---
 RUN printf '%s\n' \
