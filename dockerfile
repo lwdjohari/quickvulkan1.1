@@ -66,17 +66,17 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
       libwayland-client0 libwayland-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# -------------------------------------------------------------------
-# Vulkan stack
-#   USE_DISTRO_VULKAN=false -> LunarG SDK (default, pinned)
-#   USE_DISTRO_VULKAN=true  -> Ubuntu packages
-# -------------------------------------------------------------------
+
+# ---------------- Vulkan stack ----------------
+# USE_DISTRO_VULKAN=false -> LunarG SDK (default)
+# USE_DISTRO_VULKAN=true  -> Ubuntu packages
+# -----------------------------------------------
 ARG USE_DISTRO_VULKAN=${USE_DISTRO_VULKAN:-false}
 ARG VULKAN_SDK_VERSION=${VULKAN_SDK_VERSION:-1.3.296.0}
 
-ENV VULKAN_SDK=/opt/vulkan-sdk/x86_64
-ENV PATH=/opt/vulkan-sdk/x86_64/bin:$PATH
-ENV LD_LIBRARY_PATH=/opt/vulkan-sdk/x86_64/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}
+ENV VULKAN_SDK=/opt/vulkan-sdk/x86_64 \
+    PATH=/opt/vulkan-sdk/x86_64/bin:$PATH \
+    LD_LIBRARY_PATH=/opt/vulkan-sdk/x86_64/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}
 
 RUN set -eux; \
   if [ "${USE_DISTRO_VULKAN}" = "true" ]; then \
@@ -88,10 +88,16 @@ RUN set -eux; \
     sed -i '/VULKAN_SDK/d' /etc/profile.d/*.sh 2>/dev/null || true; \
   else \
     echo ">>> Installing LunarG Vulkan SDK (${VULKAN_SDK_VERSION})"; \
-    mkdir -p /opt && cd /opt; \
-    wget -q "https://sdk.lunarg.com/sdk/download/${VULKAN_SDK_VERSION}/linux/vulkan-sdk.tar.gz" -O /tmp/vksdk.tgz; \
-    mkdir -p /opt/vulkan-sdk && tar -xzf /tmp/vksdk.tgz -C /opt/vulkan-sdk --strip-components=1; \
-    rm -f /tmp/vksdk.tgz; \
+    SDK_URL="https://sdk.lunarg.com/sdk/download/${VULKAN_SDK_VERSION}/linux/vulkansdk-linux-x86_64-${VULKAN_SDK_VERSION}.tar.xz"; \
+    curl -fsSL -o /tmp/vksdk.tar.xz "$SDK_URL"; \
+    # Sanity: ensure we really fetched an xz archive
+    file /tmp/vksdk.tar.xz | grep -qi 'XZ compressed' || { \
+      echo "Downloaded file is not an .xz archive. URL may have changed: $SDK_URL"; \
+      exit 1; \
+    }; \
+    mkdir -p /opt/vulkan-sdk; \
+    tar -xJf /tmp/vksdk.tar.xz -C /opt/vulkan-sdk --strip-components=1; \
+    rm -f /tmp/vksdk.tar.xz; \
     printf 'export VULKAN_SDK=/opt/vulkan-sdk/x86_64\nexport PATH=$VULKAN_SDK/bin:$PATH\nexport LD_LIBRARY_PATH=$VULKAN_SDK/lib:$LD_LIBRARY_PATH\n' \
       > /etc/profile.d/10-vulkan-sdk.sh; \
   fi
