@@ -257,5 +257,14 @@ VOLUME ["/workspace", "/root/.ssh", "/opt/cache/ccache"]
 EXPOSE 22
 EXPOSE 7001-7010
 
+# --- Disable Ubuntu MOTD and login banners ---
+RUN rm -f /etc/motd /etc/legal \
+ && chmod -x /etc/update-motd.d/* || true \
+ && echo "" > /etc/motd \
+ && echo "" > /etc/issue \
+ && echo "" > /etc/issue.net \
+ && touch /root/.hushlogin \
+ && echo "[entrypoint] Ubuntu MOTD disabled, using custom banner only."
+ 
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 CMD ["sleep", "infinity"]
