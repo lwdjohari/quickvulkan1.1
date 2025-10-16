@@ -1,0 +1,35 @@
+# docker-compose.gui.yml
+services:
+  quickvulkanv1:
+    environment:
+      # --- Display integration (Wayland + X11 fallback) ---
+      DISPLAY: ${DISPLAY}
+      WAYLAND_DISPLAY: ${WAYLAND_DISPLAY:-wayland-0}
+
+      # Point to the host's runtime dir so Wayland clients find the socket.
+      # On most Ubuntu desktops HOST_UID=1000; override in your .env if different.
+      XDG_RUNTIME_DIR: /run/user/${HOST_UID:-1000}
+
+      # Optional: make Qt/SDL apps prefer Wayland, falling back to X11 if needed
+      QT_QPA_PLATFORM: wayland;xcb
+      SDL_VIDEODRIVER: wayland
+
+      # --- Audio (optional; comment out if not needed) ---
+      # PULSE_SERVER: unix:/run/user/${HOST_UID:-1000}/pulse/native
+
+    volumes:
+      # X11 socket (XWayland fallback)
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+
+      # Wayland socket from the host user session
+      - /run/user/${HOST_UID:-1000}/wayland-0:/run/user/${HOST_UID:-1000}/wayland-0:rw
+
+      # Optional: PulseAudio socket for sound from GUI tools
+      # - /run/user/${HOST_UID:-1000}/pulse:/run/user/${HOST_UID:-1000}/pulse:rw
+
+    # Optional: Android Emulator hardware accel (requires kvm on host)
+    # devices:
+    #   - /dev/kvm:/dev/kvm
+
+    # You still need either the NVIDIA or Mesa override for GPU access.
+    # Combine this file with docker-compose.nvidia.yml or docker-compose.mesa.yml at launch.
