@@ -3,9 +3,10 @@ set -euo pipefail
 
 # -------------------------------------------------------------------
 # Quick Vulkan Dev Container Launcher
-# - Lets you choose GPU backend manually (NVIDIA / Mesa / None)
-# - Also auto-detects GPU as a hint (can be overridden)
-# - Asks whether to use sudo for docker (auto if docker needs it)
+# - Manual GPU mode (NVIDIA / Mesa / None) with auto-detect hint
+# - Optional GUI mode (Wayland/X11 sockets) via docker-compose.gui.yml
+# - Sudo prompt if Docker needs elevation
+# - Actions: up, rebuild, down, logs
 # Author: Linggawasistha Djohari (https://github.com/lwdjohari)
 # -------------------------------------------------------------------
 
@@ -17,9 +18,12 @@ yellow=$(tput setaf 3 2>/dev/null || echo "")
 red=$(tput setaf 1 2>/dev/null || echo "")
 
 print_header() {
-  echo "${cyan}${bold}==============================================${reset}"
+  echo ""
   echo "${cyan}${bold} Quick Vulkan Dev Container Launcher${reset}"
-  echo "${cyan}${bold}==============================================${reset}"
+  echo "${cyan}${bold}--------------------------------------${reset}"
+  echo "Linggawasistha Djohari, 2025"
+  echo ""
+
 }
 
 require() {
@@ -42,7 +46,6 @@ ask_yes_no() {
   done
 }
 
-# Prefer docker compose v2; fall back to docker-compose if needed
 compose_cmd() {
   if docker compose version >/dev/null 2>&1; then
     echo "docker compose"
@@ -55,7 +58,6 @@ compose_cmd() {
 
 print_header
 require docker
-
 COMPOSE=$(compose_cmd)
 if [ -z "$COMPOSE" ]; then
   echo "${red}❌ Neither 'docker compose' (v2) nor 'docker-compose' found.${reset}"
@@ -73,14 +75,13 @@ if ! docker info >/dev/null 2>&1; then
     exit 1
   fi
 else
-  # Optional: ask explicitly if user wants sudo anyway
   if ask_yes_no "Run with sudo?" n; then
     USE_SUDO="sudo"
   fi
 fi
 
 # -------------------------------------------------------------------
-# GPU: auto-detect (as a hint) + manual selection
+# GPU: auto-detect (hint) + manual selection
 # -------------------------------------------------------------------
 detected="unknown"
 if command -v lspci >/dev/null 2>&1; then
@@ -115,7 +116,7 @@ case "$choice" in
       *) gpu_mode="none" ;;
     esac
     ;;
-  *) echo "Invalid choice; using Auto."; 
+  *) echo "Invalid choice; using Auto."
      case "$detected" in
        nvidia) gpu_mode="nvidia" ;;
        amd|ati|intel) gpu_mode="mesa" ;;
@@ -123,38 +124,64 @@ case "$choice" in
      esac
      ;;
 esac
-
 echo "👉 Using GPU mode: ${green}${gpu_mode}${reset}"
 echo ""
 
 # -------------------------------------------------------------------
-# Compose files and sanity checks
+# GUI mode (Wayland/X11) toggle
+# -------------------------------------------------------------------
+enable_gui="no"
+if ask_yes_no "Enable GUI (Wayland/X11) for VkSurface / GUI tools?" n; then
+  enable_gui="yes"
+fi
+
+# When GUI is enabled, we need host X/Wayland access
+if [ "$enable_gui" = "yes" ]; then
+  # Allow local docker to connect to your X server (X11/XWayland); harmless on Wayland
+  if command -v xhost >/dev/null 2>&1; then
+    if ! xhost | grep -q "LOCAL:"; then
+      echo "${cyan}Granting local X access: xhost +local:docker${reset}"
+      xhost +local:docker >/dev/null 2>&1 || true
+    fi
+  else
+    echo "${yellow}⚠️ 'xhost' not found; if X11 is used, you may need to allow access manually.${reset}"
+  fi
+fi
+
+# -------------------------------------------------------------------
+# Compose file stack & sanity checks
 # -------------------------------------------------------------------
 BASE_YML="docker-compose.yml"
 NVIDIA_YML="docker-compose.nvidia.yml"
 MESA_YML="docker-compose.mesa.yml"
+GUI_YML="docker-compose.gui.yml"
 
 [ -f "$BASE_YML" ] || { echo "${red}❌ Missing ${BASE_YML} in current directory.${reset}"; exit 1; }
 
 CMD="$COMPOSE -f $BASE_YML"
 
-if [ "$gpu_mode" = "nvidia" ]; then
-  if [ ! -f "$NVIDIA_YML" ]; then
-    echo "${red}❌ Missing ${NVIDIA_YML}.${reset}"; exit 1
-  fi
-  CMD="$CMD -f $NVIDIA_YML"
+case "$gpu_mode" in
+  nvidia)
+    [ -f "$NVIDIA_YML" ] || { echo "${red}❌ Missing ${NVIDIA_YML}.${reset}"; exit 1; }
+    CMD="$CMD -f $NVIDIA_YML"
+    if ! command -v nvidia-ctk >/dev/null 2>&1 && ! command -v nvidia-container-toolkit >/dev/null 2>&1; then
+      echo "${yellow}⚠️  'nvidia-container-toolkit' not found on host.${reset}"
+      echo "    Install: sudo apt install -y nvidia-container-toolkit && sudo systemctl restart docker"
+    fi
+    ;;
+  mesa)
+    [ -f "$MESA_YML" ] || { echo "${red}❌ Missing ${MESA_YML}.${reset}"; exit 1; }
+    CMD="$CMD -f $MESA_YML"
+    ;;
+  none) ;; # base only
+esac
 
-  # Gentle check for nvidia-container-toolkit on host
-  if ! command -v nvidia-container-toolkit >/dev/null 2>&1; then
-    echo "${yellow}⚠️  'nvidia-container-toolkit' not found on host.${reset}"
-    echo "    Install it on Ubuntu: sudo apt install -y nvidia-container-toolkit && sudo systemctl restart docker"
-  fi
-
-elif [ "$gpu_mode" = "mesa" ]; then
-  if [ ! -f "$MESA_YML" ]; then
-    echo "${red}❌ Missing ${MESA_YML}.${reset}"; exit 1
-  fi
-  CMD="$CMD -f $MESA_YML"
+if [ "$enable_gui" = "yes" ]; then
+  [ -f "$GUI_YML" ] || { echo "${red}❌ Missing ${GUI_YML}.${reset}"; exit 1; }
+  # Export HOST_UID so the compose file can mount /run/user/$HOST_UID/wayland-0
+  export HOST_UID="$(id -u)"
+  CMD="$CMD -f $GUI_YML"
+  echo "🖥  GUI enabled (HOST_UID=${HOST_UID})."
 fi
 
 # -------------------------------------------------------------------
@@ -171,23 +198,23 @@ action="${action:-u}"
 case "$action" in
   u|U)
     echo "${cyan}>> Starting container...${reset}"
-    exec $USE_SUDO $CMD up -d
+    exec ${USE_SUDO:+$USE_SUDO} $CMD up -d
     ;;
   r|R)
     echo "${cyan}>> Rebuilding image (no cache) and starting...${reset}"
-    $USE_SUDO $CMD build --no-cache
-    exec $USE_SUDO $CMD up -d
+    ${USE_SUDO:+$USE_SUDO} $CMD build --no-cache
+    exec ${USE_SUDO:+$USE_SUDO} $CMD up -d
     ;;
   d|D)
     echo "${cyan}>> Stopping container...${reset}"
-    exec $USE_SUDO $CMD down
+    exec ${USE_SUDO:+$USE_SUDO} $CMD down
     ;;
   l|L)
     echo "${cyan}>> Streaming logs... (Ctrl-C to exit)${reset}"
-    exec $USE_SUDO $CMD logs -f
+    exec ${USE_SUDO:+$USE_SUDO} $CMD logs -f
     ;;
   *)
     echo "${cyan}>> Starting container (default)...${reset}"
-    exec $USE_SUDO $CMD up -d
+    exec ${USE_SUDO:+$USE_SUDO} $CMD up -d
     ;;
 esac
