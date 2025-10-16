@@ -19,8 +19,9 @@ red=$(tput setaf 1 2>/dev/null || echo "")
 
 print_header() {
   echo ""
-  echo "${cyan}${bold} Quick Vulkan Dev Container Launcher${reset}"
+  echo "${cyan}${bold}Quickvulkan1.1${reset}"
   echo "${cyan}${bold}--------------------------------------${reset}"
+  echo "Quickvulkan docker development container quick launcher."
   echo "Linggawasistha Djohari, 2025"
   echo ""
 

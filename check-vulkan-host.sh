@@ -6,6 +6,16 @@ set -euo pipefail
 #   ./check-vulkan-host.sh           # just check
 #   ./check-vulkan-host.sh --fix     # also run safe fixes (xhost +local:docker)
 
+print_header() {
+  echo ""
+  echo "${cyan}${bold}Quickvulkan1.1${reset}"
+  echo "${cyan}${bold}--------------------------------------${reset}"
+  echo "Quickvulkan check host pre-resiquites utility."
+  echo "Linggawasistha Djohari, 2025"
+  echo ""
+
+}
+
 ok()   { printf "\033[32m✔\033[0m %s\n" "$*"; }
 warn() { printf "\033[33m⚠\033[0m %s\n" "$*"; }
 err()  { printf "\033[31m✘\033[0m %s\n" "$*"; }
@@ -26,6 +36,8 @@ as_real_user() {
        XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-$REAL_RUNTIME_DIR}" \
        bash -lc "$*"
 }
+
+print_header
 
 # ---------- Basic tools ----------
 need=( bash id lspci grep awk sed xhost )
