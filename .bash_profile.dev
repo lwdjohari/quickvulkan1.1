@@ -3,27 +3,3 @@
 
 [ -f "$HOME/.bashrc" ] && . "$HOME/.bashrc"
 
-: "${RED:=\033[0;31m}"
-: "${GREEN:=\033[0;32m}"
-: "${YELLOW:=\033[1;33m}"
-: "${BLUE:=\033[1;34m}"
-: "${CYAN:=\033[1;36m}"
-: "${MAGENTA:=\033[1;35m}"
-: "${BOLD:=\033[1m}"
-: "${DIM:=\033[2m}"
-: "${RESET:=\033[0m}"
-
-if [ -t 1 ]; then
-  _now="$(date '+%Y-%m-%d %H:%M:%S')"
-  _host="$(command -v hostname >/dev/null 2>&1 && hostname || echo unknown)"
-  _user="$(id -un)"
-  _uid="$(id -u)"
-  _gid="$(id -g)"
-  _sh="${SHELL##*/}"
-  _ws="/workspace"
-  _home="$HOME"
-
-
-  # Full inventory
-  devinfo
-fi
