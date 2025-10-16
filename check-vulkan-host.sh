@@ -16,8 +16,8 @@ red=$(tput setaf 1 2>/dev/null || echo "")
 print_header() {
   echo ""
   echo "${cyan}${bold}Quickvulkan1.1${reset}"
-  echo "${cyan}${bold}--------------------------------------${reset}"
-  echo "Quickvulkan check host pre-resiquites utility."
+  echo "${cyan}${bold}------------------------------------------------------${reset}"
+  echo "Quickvulkan check host prerequisites utility."
   echo "Linggawasistha Djohari, 2025"
   echo ""
 
