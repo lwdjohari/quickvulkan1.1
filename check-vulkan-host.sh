@@ -6,6 +6,13 @@ set -euo pipefail
 #   ./check-vulkan-host.sh           # just check
 #   ./check-vulkan-host.sh --fix     # also run safe fixes (xhost +local:docker)
 
+bold=$(tput bold 2>/dev/null || echo "")
+reset=$(tput sgr0 2>/dev/null || echo "")
+cyan=$(tput setaf 6 2>/dev/null || echo "")
+green=$(tput setaf 2 2>/dev/null || echo "")
+yellow=$(tput setaf 3 2>/dev/null || echo "")
+red=$(tput setaf 1 2>/dev/null || echo "")
+
 print_header() {
   echo ""
   echo "${cyan}${bold}Quickvulkan1.1${reset}"
