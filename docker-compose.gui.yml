@@ -1,14 +1,16 @@
 # docker-compose.gui.yml
+
+# docker-compose.gui.yml
 services:
   quickvulkanv1:
     environment:
       # --- Display integration (Wayland + X11 fallback) ---
-      DISPLAY: ${DISPLAY}
-      WAYLAND_DISPLAY: ${WAYLAND_DISPLAY:-wayland-0}
+      DISPLAY: "${DISPLAY:-:0}"
+      WAYLAND_DISPLAY: "${WAYLAND_DISPLAY:-wayland-0}"
 
       # Point to the host's runtime dir so Wayland clients find the socket.
       # On most Ubuntu desktops HOST_UID=1000; override in your .env if different.
-      XDG_RUNTIME_DIR: /run/user/${HOST_UID:-1000}
+      XDG_RUNTIME_DIR: "/run/user/${HOST_UID:-1000}"
 
       # Optional: make Qt/SDL apps prefer Wayland, falling back to X11 if needed
       QT_QPA_PLATFORM: wayland;xcb

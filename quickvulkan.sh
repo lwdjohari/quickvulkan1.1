@@ -70,7 +70,7 @@ USE_SUDO=""
 if ! docker info >/dev/null 2>&1; then
   echo "${yellow}⚠️  Docker requires elevated privileges on this system.${reset}"
   if ask_yes_no "Run with sudo?" y; then
-    USE_SUDO="sudo"
+    USE_SUDO="sudo -E"
   else
     echo "${red}Aborted (docker not accessible without sudo).${reset}"
     exit 1
