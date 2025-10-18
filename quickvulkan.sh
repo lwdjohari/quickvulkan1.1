@@ -7,6 +7,7 @@ set -euo pipefail
 # - Optional GUI mode (Wayland/X11 sockets) via docker-compose.gui.yml
 # - Sudo prompt if Docker needs elevation
 # - Actions: up, rebuild, down, logs
+# - command + env preview
 # Author: Linggawasistha Djohari (https://github.com/lwdjohari)
 # -------------------------------------------------------------------
 
@@ -24,7 +25,6 @@ print_header() {
   echo "Quickvulkan docker development container quick launcher."
   echo "Linggawasistha Djohari, 2025"
   echo ""
-
 }
 
 require() {
@@ -65,7 +65,7 @@ if [ -z "$COMPOSE" ]; then
   exit 1
 fi
 
-# Determine if we need sudo for docker
+# Detect if Docker needs sudo
 USE_SUDO=""
 if ! docker info >/dev/null 2>&1; then
   echo "${yellow}⚠️  Docker requires elevated privileges on this system.${reset}"
@@ -82,7 +82,7 @@ else
 fi
 
 # -------------------------------------------------------------------
-# GPU: auto-detect (hint) + manual selection
+# GPU detection & manual choice
 # -------------------------------------------------------------------
 detected="unknown"
 if command -v lspci >/dev/null 2>&1; then
@@ -117,40 +117,35 @@ case "$choice" in
       *) gpu_mode="none" ;;
     esac
     ;;
-  *) echo "Invalid choice; using Auto."
-     case "$detected" in
-       nvidia) gpu_mode="nvidia" ;;
-       amd|ati|intel) gpu_mode="mesa" ;;
-       *) gpu_mode="none" ;;
-     esac
-     ;;
+  *)
+    echo "Invalid choice; using Auto."
+    case "$detected" in
+      nvidia) gpu_mode="nvidia" ;;
+      amd|ati|intel) gpu_mode="mesa" ;;
+      *) gpu_mode="none" ;;
+    esac
+    ;;
 esac
 echo "👉 Using GPU mode: ${green}${gpu_mode}${reset}"
 echo ""
 
 # -------------------------------------------------------------------
-# GUI mode (Wayland/X11) toggle
+# GUI (Wayland/X11) toggle
 # -------------------------------------------------------------------
 enable_gui="no"
 if ask_yes_no "Enable GUI (Wayland/X11) for VkSurface / GUI tools?" n; then
   enable_gui="yes"
 fi
 
-# When GUI is enabled, we need host X/Wayland access
 if [ "$enable_gui" = "yes" ]; then
-  # Allow local docker to connect to your X server (X11/XWayland); harmless on Wayland
   if command -v xhost >/dev/null 2>&1; then
-    if ! xhost | grep -q "LOCAL:"; then
-      echo "${cyan}Granting local X access: xhost +local:docker${reset}"
-      xhost +local:docker >/dev/null 2>&1 || true
-    fi
-  else
-    echo "${yellow}⚠️ 'xhost' not found; if X11 is used, you may need to allow access manually.${reset}"
+    echo "${cyan}Granting local X access: xhost +local:docker${reset}"
+    xhost +local:docker >/dev/null 2>&1 || true
   fi
 fi
 
 # -------------------------------------------------------------------
-# Compose file stack & sanity checks
+# Compose stack setup
 # -------------------------------------------------------------------
 BASE_YML="docker-compose.yml"
 NVIDIA_YML="docker-compose.nvidia.yml"
@@ -160,30 +155,59 @@ GUI_YML="docker-compose.gui.yml"
 [ -f "$BASE_YML" ] || { echo "${red}❌ Missing ${BASE_YML} in current directory.${reset}"; exit 1; }
 
 CMD="$COMPOSE -f $BASE_YML"
+STACK_DESC="$BASE_YML"
 
 case "$gpu_mode" in
   nvidia)
     [ -f "$NVIDIA_YML" ] || { echo "${red}❌ Missing ${NVIDIA_YML}.${reset}"; exit 1; }
     CMD="$CMD -f $NVIDIA_YML"
-    if ! command -v nvidia-ctk >/dev/null 2>&1 && ! command -v nvidia-container-toolkit >/dev/null 2>&1; then
-      echo "${yellow}⚠️  'nvidia-container-toolkit' not found on host.${reset}"
-      echo "    Install: sudo apt install -y nvidia-container-toolkit && sudo systemctl restart docker"
-    fi
+    STACK_DESC="$STACK_DESC + $NVIDIA_YML"
     ;;
   mesa)
     [ -f "$MESA_YML" ] || { echo "${red}❌ Missing ${MESA_YML}.${reset}"; exit 1; }
     CMD="$CMD -f $MESA_YML"
+    STACK_DESC="$STACK_DESC + $MESA_YML"
     ;;
-  none) ;; # base only
 esac
 
 if [ "$enable_gui" = "yes" ]; then
   [ -f "$GUI_YML" ] || { echo "${red}❌ Missing ${GUI_YML}.${reset}"; exit 1; }
-  # Export HOST_UID so the compose file can mount /run/user/$HOST_UID/wayland-0
   export HOST_UID="$(id -u)"
   CMD="$CMD -f $GUI_YML"
-  echo "🖥  GUI enabled (HOST_UID=${HOST_UID})."
+  STACK_DESC="$STACK_DESC + $GUI_YML"
 fi
+
+# -------------------------------------------------------------------
+# Env preview helper
+# -------------------------------------------------------------------
+print_env_preview() {
+  echo "${bold}Env passed (host → container):${reset}"
+
+  if [ "$enable_gui" = "yes" ]; then
+    # Values used by docker-compose.gui.yml
+    local disp="${DISPLAY:-<unset>}"
+    local wdisp="${WAYLAND_DISPLAY:-wayland-0}"
+    local huid="${HOST_UID:-$(id -u)}"
+    local xdg="/run/user/${huid}"
+
+    printf "  DISPLAY=%s\n" "$disp"
+    printf "  WAYLAND_DISPLAY=%s\n" "$wdisp"
+    printf "  XDG_RUNTIME_DIR=%s\n" "$xdg"
+    printf "  HOST_UID=%s\n" "$huid"
+  else
+    echo "  (GUI disabled)"
+  fi
+
+  if [ "$gpu_mode" = "nvidia" ]; then
+    echo "  NVIDIA_VISIBLE_DEVICES=all"
+    echo "  NVIDIA_DRIVER_CAPABILITIES=graphics,utility,compute"
+  fi
+
+  # Mention .env pass-through (if present)
+  if [ -f ".env" ]; then
+    echo "  + plus variables from .env (if referenced in compose files)"
+  fi
+}
 
 # -------------------------------------------------------------------
 # Action menu
@@ -195,6 +219,19 @@ echo "  d) down (stop)"
 echo "  l) logs -f"
 read -rp "Enter choice [u/r/d/l, default u]: " action
 action="${action:-u}"
+
+# -------------------------------------------------------------------
+# Print stack, env preview, and final command
+# -------------------------------------------------------------------
+echo ""
+echo "${bold}Compose files:${reset} $STACK_DESC"
+print_env_preview
+echo ""
+echo "${bold}------------------------------------------------------${reset}"
+echo "Final command to be executed:"
+echo "${yellow}${USE_SUDO:+$USE_SUDO }$CMD${reset}"
+echo "${bold}------------------------------------------------------${reset}"
+echo ""
 
 case "$action" in
   u|U)
