@@ -4,3 +4,6 @@ services:
     environment:
       NVIDIA_VISIBLE_DEVICES: all
       NVIDIA_DRIVER_CAPABILITIES: all
+    volumes:
+    - /usr/share/vulkan/icd.d:/usr/share/vulkan/icd.d:ro
+    - /usr/share/glvnd/egl_vendor.d:/usr/share/glvnd/egl_vendor.d:ro   # EGL ICDs too (optional)
